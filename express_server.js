@@ -1,5 +1,6 @@
 const express = require("express");
 const { url } = require("inspector");
+const crypto = require("crypto");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -9,6 +10,12 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+
+generateRandomString = () => {
+    const buf = crypto.randomBytes(6);
+    return buf.toString("hash");
+}
 
 app.use(express.urlencoded({ extended: true }));
 
