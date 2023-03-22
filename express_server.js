@@ -13,6 +13,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {};
 
 generateRandomString = () => {
     const buf = crypto.randomBytes(3);
@@ -69,21 +70,32 @@ app.post("/urls/:id", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
-})
+});
 
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
   res.redirect("/urls");
-})
+});
 
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
-})
+});
 
 app.get("/register", (req, res) => {
   res.render("user_registration");
-})
+});
+
+app.post("/register", (req, res) => {
+  const user_id = generateRandomString();
+  users[user_id] = {
+    id: user_id,
+    email: req.body.email,
+    password: req.body.password,
+  };
+  res.cookie("user_id", user_id);
+  res.redirect("/urls")
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
