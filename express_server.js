@@ -91,11 +91,23 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
+
+  if(!req.body.email || !req.body.password) {
+    return res.status(400).send("Please fill out all the forms.");
+  }
+
+  for (const key in users) {
+    if (users[key]["email"] === req.body.email) {
+      return res.status(400).send("That email is already registered!");
+    }
+  }
+
   users[user_id] = {
     id: user_id,
     email: req.body.email,
     password: req.body.password,
   };
+
   res.cookie("user_id", user_id);
   res.redirect("/urls")
 });
