@@ -79,24 +79,34 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  if (!req.cookies["user_id"]){
-    return res.status(400).send("You are not logged in.");
-  }
 
   const id = generateRandomString(); 
+
   urlDatabase[id] = {
     userId: req.cookies["user_id"],
     longUrl: req.body.longURL
   };
+
   console.log(urlDatabase);
   res.redirect("/urls");
 });
 
 app.get("/urls/:id", (req, res) => {
+  if(!req.cookies["user_id"]) {
+    return res.status(400).send("Please log in to view urls.");
+  }
+
+  if(req.cookies["user_id"] !== urlDatabase[req.params.id].userId) {
+    return res.status(400).send("You do not have permission to view this url.");
+  }
+
   const templateVars = { 
     user: users[req.cookies["user_id"]],
     id: req.params.id, 
-    longURL: urlDatabase[req.params.id].longUrl};
+    longURL: urlDatabase[req.params.id].longUrl
+  };
+
+
   res.render("urls_show", templateVars);
 });
 
