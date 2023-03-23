@@ -120,10 +120,35 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.status(400).send("That url does not exist!")
+  };
+
+  if(!req.cookies["user_id"]) {
+    return res.status(400).send("Please log in to edit urls.");
+  }
+
+  if(req.cookies["user_id"] !== urlDatabase[req.params.id].userId) {
+    return res.status(400).send("You do not have permission to edit this url.");
+  }
+
+
   urlDatabase[req.params.id].longUrl = req.body.update;
 })
 
 app.post("/urls/:id/delete", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.status(400).send("That url does not exist!")
+  };
+  
+  if(!req.cookies["user_id"]) {
+    return res.status(400).send("Please log in to delete urls.");
+  }
+
+  if(req.cookies["user_id"] !== urlDatabase[req.params.id].userId) {
+    return res.status(400).send("You do not have permission to delete this url.");
+  }
+
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
