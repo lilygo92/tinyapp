@@ -15,9 +15,18 @@ const urlDatabase = {
 
 const users = {};
 
-generateRandomString = () => {
+const generateRandomString = () => {
     const buf = crypto.randomBytes(3);
     return buf.toString("hex");
+}
+
+const getUserByEmail = (email) => {
+  for (const key in users) {
+    if (users[key].email === email) {
+      return users[key];
+    }
+  }
+  return null;
 }
 
 app.use(express.urlencoded({ extended: true }));
@@ -80,12 +89,24 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if(!email || !password) {
+    return res.status(400).send("Please fill out all the forms.");
+  }
+
+  const userFound = getUserByEmail(email);
+  if (!userFound){
+    return res.status(403).send("That email isn't registered");
+  } 
+  
+  res.cookie("user_id", userFound.id);
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -95,21 +116,22 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
 
-  if(!req.body.email || !req.body.password) {
+  if(!email || !password) {
     return res.status(400).send("Please fill out all the forms.");
   }
-
-  for (const key in users) {
-    if (users[key]["email"] === req.body.email) {
-      return res.status(400).send("That email is already registered!");
-    }
+  
+  const userFound = getUserByEmail(email)
+  if (userFound) {
+    return res.status(400).send("That email is already registered!");
   }
 
   users[user_id] = {
     id: user_id,
-    email: req.body.email,
-    password: req.body.password,
+    email,
+    password
   };
 
   res.cookie("user_id", user_id);
