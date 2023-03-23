@@ -63,7 +63,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); 
+  if (!req.cookies["user_id"]){
+    return res.status(400).send("You are not logged in.");
+  }
+
   const id = generateRandomString(); 
   urlDatabase[id] = req.body.longURL;
   res.redirect("/urls");
@@ -78,6 +81,10 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.status(400).send("That url does not exist!")
+  };
+
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
