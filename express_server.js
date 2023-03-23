@@ -52,7 +52,14 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  if (!req.cookies["user_id"]){
+    res.redirect("/login");
+  }
+
+  const templateVars = {
+    user: users[req.cookies["user_id"]],
+  }
+  res.render("urls_new", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -107,7 +114,7 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
