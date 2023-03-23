@@ -1,7 +1,8 @@
 const express = require("express");
 const { url } = require("inspector");
 const crypto = require("crypto");
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -56,7 +57,7 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (!req.cookies["user_id"]){
-    return res.status(400).send("Please log in to view urls.");
+    return res.redirect("/login");
   }
 
   const templateVars = { 
@@ -169,6 +170,10 @@ app.post("/login", (req, res) => {
   if (!userFound){
     return res.status(403).send("That email isn't registered");
   } 
+
+  if (!bcrypt.compareSync(password, userFound.hashedPassword)) {
+    return res.status(403).send("Your email and password do not match");
+  }
   
   res.cookie("user_id", userFound.id);
   res.redirect("/urls");
@@ -187,6 +192,7 @@ app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
   if(!email || !password) {
     return res.status(400).send("Please fill out all the forms.");
@@ -200,7 +206,7 @@ app.post("/register", (req, res) => {
   users[user_id] = {
     id: user_id,
     email,
-    password
+    hashedPassword
   };
 
   res.cookie("user_id", user_id);
