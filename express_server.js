@@ -9,8 +9,8 @@ app.set("view engine", "ejs");
 app.use(cookieParser())
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longUrl: "http://www.lighthouselabs.ca"},
+  "9sm5xK": { longUrl: "http://www.google.com"}
 };
 
 const users = {};
@@ -46,7 +46,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     user: users[req.cookies["user_id"]],
-    urls: urlDatabase 
+    urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
@@ -68,7 +68,11 @@ app.post("/urls", (req, res) => {
   }
 
   const id = generateRandomString(); 
-  urlDatabase[id] = req.body.longURL;
+  urlDatabase[id] = {
+    userId: req.cookies["user_id"],
+    longUrl: req.body.longURL
+  };
+  console.log(urlDatabase);
   res.redirect("/urls");
 });
 
@@ -76,7 +80,7 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { 
     user: users[req.cookies["user_id"]],
     id: req.params.id, 
-    longURL: urlDatabase[req.params.id]};
+    longURL: urlDatabase[req.params.id].longUrl};
   res.render("urls_show", templateVars);
 });
 
@@ -85,12 +89,12 @@ app.get("/u/:id", (req, res) => {
     return res.status(400).send("That url does not exist!")
   };
 
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longUrl;
   res.redirect(longURL);
 });
 
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.update;
+  urlDatabase[req.params.id].longUrl = req.body.update;
 })
 
 app.post("/urls/:id/delete", (req, res) => {
