@@ -29,6 +29,17 @@ const getUserByEmail = (email) => {
   return null;
 }
 
+const urlsForUser = (id) => {
+  const usersUrls = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userId === id) {
+      usersUrls[key] = urlDatabase[key];
+    }
+  }
+
+  return usersUrls;
+}
+
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -44,10 +55,15 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  if (!req.cookies["user_id"]){
+    return res.status(400).send("Please log in to view urls.");
+  }
+
   const templateVars = { 
     user: users[req.cookies["user_id"]],
-    urls: urlDatabase
+    urls: urlsForUser(req.cookies["user_id"])
   };
+
   res.render("urls_index", templateVars);
 });
 
@@ -55,7 +71,7 @@ app.get("/urls/new", (req, res) => {
   if (!req.cookies["user_id"]){
     res.redirect("/login");
   }
-
+  
   const templateVars = {
     user: users[req.cookies["user_id"]],
   }
