@@ -12,7 +12,7 @@ app.use(cookieSession({
   keys: ["something secret"]
 }));
 
-const urlDatabase = {}; 
+const urlDatabase = {};
 const users = {}; // users database
 
 app.use(express.urlencoded({ extended: true }));
@@ -82,7 +82,7 @@ app.get("/register", (req, res) => {
 });
 
 
-app.post("/register", (req, res) => { 
+app.post("/register", (req, res) => {
   const userCookie = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
