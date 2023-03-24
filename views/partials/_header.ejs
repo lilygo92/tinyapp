@@ -19,7 +19,7 @@
       </div>
     </div>
     <% if (user) { %>
-      <div><h5><%= user["email"] %></h5></div>
+      <div><%= user["email"] %></div>
       <form method="POST" action="/logout">
         <input type="submit" id="button" name="button" value="Logout">
       </form>
