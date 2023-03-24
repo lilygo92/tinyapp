@@ -1,13 +1,16 @@
 const express = require("express");
 const { url } = require("inspector");
 const crypto = require("crypto");
-const cookieParser = require('cookie-parser');
+const cookieSession = require("cookie-session")
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
-app.use(cookieParser())
+app.use(cookieSession({
+  name: 'session',
+  keys: ["something secret"]
+}))
 
 const urlDatabase = {
   "b2xVn2": { longUrl: "http://www.lighthouselabs.ca"},
@@ -19,15 +22,6 @@ const users = {};
 const generateRandomString = () => {
     const buf = crypto.randomBytes(3);
     return buf.toString("hex");
-}
-
-const getUserByEmail = (email) => {
-  for (const key in users) {
-    if (users[key].email === email) {
-      return users[key];
-    }
-  }
-  return null;
 }
 
 const urlsForUser = (id) => {
@@ -56,25 +50,24 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.cookies["user_id"]){
+  if (!req.session["user_id"]){
     return res.redirect("/login");
   }
-
   const templateVars = { 
-    user: users[req.cookies["user_id"]],
-    urls: urlsForUser(req.cookies["user_id"])
+    user: users[req.session["user_id"]],
+    urls: urlsForUser(req.session["user_id"])
   };
 
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["user_id"]){
+  if (!req.session["user_id"]){
     res.redirect("/login");
   }
   
   const templateVars = {
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
   }
   res.render("urls_new", templateVars);
 });
@@ -84,7 +77,7 @@ app.post("/urls", (req, res) => {
   const id = generateRandomString(); 
 
   urlDatabase[id] = {
-    userId: req.cookies["user_id"],
+    userId: req.session["user_id"],
     longUrl: req.body.longURL
   };
 
@@ -93,16 +86,16 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  if(!req.cookies["user_id"]) {
+  if(!req.session["user_id"]) {
     return res.status(400).send("Please log in to view urls.");
   }
 
-  if(req.cookies["user_id"] !== urlDatabase[req.params.id].userId) {
+  if(req.session["user_id"] !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to view this url.");
   }
 
   const templateVars = { 
-    user: users[req.cookies["user_id"]],
+    user: users[req.session["user_id"]],
     id: req.params.id, 
     longURL: urlDatabase[req.params.id].longUrl
   };
@@ -125,11 +118,11 @@ app.post("/urls/:id", (req, res) => {
     return res.status(400).send("That url does not exist!")
   };
 
-  if(!req.cookies["user_id"]) {
+  if(!req.session["user_id"]) {
     return res.status(400).send("Please log in to edit urls.");
   }
 
-  if(req.cookies["user_id"] !== urlDatabase[req.params.id].userId) {
+  if(req.session["user_id"] !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to edit this url.");
   }
 
@@ -142,11 +135,11 @@ app.post("/urls/:id/delete", (req, res) => {
     return res.status(400).send("That url does not exist!")
   };
   
-  if(!req.cookies["user_id"]) {
+  if(!req.session["user_id"]) {
     return res.status(400).send("Please log in to delete urls.");
   }
 
-  if(req.cookies["user_id"] !== urlDatabase[req.params.id].userId) {
+  if(req.session["user_id"] !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to delete this url.");
   }
 
@@ -166,7 +159,7 @@ app.post("/login", (req, res) => {
     return res.status(400).send("Please fill out all the forms.");
   }
 
-  const userFound = getUserByEmail(email);
+  const userFound = getUserByEmail(email, users);
   if (!userFound){
     return res.status(403).send("That email isn't registered");
   } 
@@ -175,7 +168,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Your email and password do not match");
   }
   
-  res.cookie("user_id", userFound.id);
+  req.session.user_id = userFound.id;
   res.redirect("/urls");
 });
 
@@ -198,7 +191,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Please fill out all the forms.");
   }
   
-  const userFound = getUserByEmail(email)
+  const userFound = getUserByEmail(email, users)
   if (userFound) {
     return res.status(400).send("That email is already registered!");
   }
@@ -209,7 +202,7 @@ app.post("/register", (req, res) => {
     hashedPassword
   };
 
-  res.cookie("user_id", user_id);
+  req.session.user_id = (user_id);
   res.redirect("/urls")
 });
 
