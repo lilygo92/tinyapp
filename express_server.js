@@ -12,9 +12,8 @@ app.use(cookieSession({
   keys: ["something secret"]
 }));
 
-const urlDatabase = {};
-
-const users = {};
+const urlDatabase = {}; 
+const users = {}; // users database
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -22,31 +21,38 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+
 app.get("/login", (req, res) => {
   res.render("login_page");
 });
+
 
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
+  // check that both email and password forms were filled in
   if (!email || !password) {
     return res.status(400).send("Please fill out all the forms.");
   }
 
+  // check that submitted email exists in users database
   const userFound = getUserByEmail(email, users);
   if (!userFound) {
     return res.status(403).send("That email isn't registered");
   }
 
+  // check that submitted password is correct
   if (!bcrypt.compareSync(password, userFound.hashedPassword)) {
     return res.status(403).send("Your email and password do not match");
   }
@@ -56,7 +62,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("userCookie");
+  req.session = null;
   res.redirect("/login");
 });
 
