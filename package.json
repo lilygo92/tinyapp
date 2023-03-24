@@ -19,9 +19,7 @@
   },
   "homepage": "https://github.com/lilygo92/tinyapp#readme",
   "dependencies": {
-    "bcrypt": "^5.1.0",
     "bcryptjs": "^2.4.3",
-    "cookie-parser": "^1.4.6",
     "cookie-session": "^2.0.0",
     "crypto": "^1.0.1",
     "ejs": "^3.1.9",
