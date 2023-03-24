@@ -61,30 +61,37 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
+
 app.post("/logout", (req, res) => {
+  // clear all cookies
   req.session = null;
   res.redirect("/login");
 });
+
 
 app.get("/register", (req, res) => {
   res.render("user_registration");
 });
 
-app.post("/register", (req, res) => {
+
+app.post("/register", (req, res) => { 
   const userCookie = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
 
+  // check that both email and password forms were filled in
   if (!email || !password) {
     return res.status(400).send("Please fill out all the forms.");
   }
   
+  // check that email is not already registered
   const userFound = getUserByEmail(email, users);
   if (userFound) {
     return res.status(400).send("That email is already registered!");
   }
 
+  // add user info to users database
   users[userCookie] = {
     id: userCookie,
     email,
@@ -95,10 +102,13 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/urls", (req, res) => {
+
+app.get("/urls", (req, res) => { // main page for viewing urls
+  // redirect to login page if not logged in
   if (!req.session["userCookie"]) {
     return res.redirect("/login");
   }
+
   const templateVars = {
     user: users[req.session["userCookie"]],
     urls: urlsForUser(req.session["userCookie"], urlDatabase)
@@ -107,7 +117,9 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
+
+app.get("/urls/new", (req, res) => { // page for making new urls
+  // redirect to login page if not logged in
   if (!req.session["userCookie"]) {
     res.redirect("/login");
   }
@@ -115,15 +127,16 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     user: users[req.session["userCookie"]],
   };
+
   res.render("urls_new", templateVars);
 });
 
-app.post("/urls", (req, res) => {
 
+app.post("/urls", (req, res) => { // add new short urls
   const id = generateRandomString();
 
   urlDatabase[id] = {
-    userId: req.session["userCookie"],
+    userId: req.session["userCookie"], // attaches url to the id of its creator
     longUrl: req.body.longURL
   };
 
@@ -131,11 +144,14 @@ app.post("/urls", (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/urls/:id", (req, res) => {
+
+app.get("/urls/:id", (req, res) => { // page for editing short urls
+  // check that user is logged in
   if (!req.session["userCookie"]) {
     return res.status(400).send("Please log in to view urls.");
   }
 
+  // check that the url was made by the user trying to access it
   if (req.session["userCookie"] !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to view this url.");
   }
@@ -150,7 +166,8 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-app.get("/u/:id", (req, res) => {
+
+app.get("/u/:id", (req, res) => { // redirect to long urls
   if (!urlDatabase[req.params.id]) {
     return res.status(400).send("That url does not exist!");
   }
@@ -159,32 +176,36 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-app.post("/urls/:id", (req, res) => {
+
+app.post("/urls/:id", (req, res) => { // edit short urls
   if (!urlDatabase[req.params.id]) {
     return res.status(400).send("That url does not exist!");
   }
 
+  // check that user is logged in
   if (!req.session["userCookie"]) {
     return res.status(400).send("Please log in to edit urls.");
   }
 
+  // check that the url was made by the user trying to edit it
   if (req.session["userCookie"] !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to edit this url.");
   }
 
-
   urlDatabase[req.params.id].longUrl = req.body.update;
 });
 
-app.post("/urls/:id/delete", (req, res) => {
+app.post("/urls/:id/delete", (req, res) => { // delete short urls
   if (!urlDatabase[req.params.id]) {
     return res.status(400).send("That url does not exist!");
   }
   
+  // check that user is logged in
   if (!req.session["userCookie"]) {
     return res.status(400).send("Please log in to delete urls.");
   }
 
+  // check that the url was made by the user trying to delete it
   if (req.session["userCookie"] !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to delete this url.");
   }
