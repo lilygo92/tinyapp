@@ -149,7 +149,6 @@ app.post("/urls", (req, res) => { // add new short urls
     longUrl: req.body.longURL
   };
 
-  console.log(urlDatabase);
   res.redirect("/urls");
 });
 
@@ -161,7 +160,7 @@ app.get("/urls/:id", (req, res) => { // page for editing short urls
   }
 
   // check that the url was made by the user trying to access it
-  if (users[req.session.userCookie] !== urlDatabase[req.params.id].userId) {
+  if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to view this url.");
   }
 
@@ -197,10 +196,10 @@ app.post("/urls/:id", (req, res) => { // edit short urls
   }
 
   // check that the url was made by the user trying to edit it
-  if (users[req.session.userCookie] !== urlDatabase[req.params.id].userId) {
+  if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to edit this url.");
   }
-
+  
   urlDatabase[req.params.id].longUrl = req.body.update;
 });
 
@@ -215,7 +214,7 @@ app.post("/urls/:id/delete", (req, res) => { // delete short urls
   }
 
   // check that the url was made by the user trying to delete it
-  if (users[req.session.userCookie] !== urlDatabase[req.params.id].userId) {
+  if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to delete this url.");
   }
 
@@ -223,6 +222,4 @@ app.post("/urls/:id/delete", (req, res) => { // delete short urls
   res.redirect("/urls");
 });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
+app.listen(PORT);
