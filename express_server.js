@@ -16,7 +16,11 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (!users[req.session.userCookie]) {
+    return res.redirect("/login");
+  }
+
+  res.redirect("/urls");
 });
 
 
