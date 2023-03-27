@@ -111,7 +111,6 @@ app.post("/register", (req, res) => {
 // display the main page that contains urls
 // redirect to login page if user is not logged in
 app.get("/urls", (req, res) => {
-
   if (!users[req.session.userCookie]) {
     return res.redirect("/login");
   }
