@@ -1,10 +1,9 @@
 const express = require("express");
-const { url } = require("inspector");
 const cookieSession = require("cookie-session");
-const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser, urlDatabase, users } = require("./helpers");
 const bcrypt = require("bcryptjs");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(cookieSession({
@@ -12,23 +11,11 @@ app.use(cookieSession({
   keys: ["something secret"]
 }));
 
-const urlDatabase = {};
-const users = {}; // users database
-
 app.use(express.urlencoded({ extended: true }));
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
 });
 
 
@@ -66,8 +53,8 @@ app.post("/login", (req, res) => {
 });
 
 
+// clear all cookies and redirect to log in
 app.post("/logout", (req, res) => {
-  // clear all cookies
   req.session = null;
   res.redirect("/login");
 });
@@ -130,7 +117,7 @@ app.get("/urls", (req, res) => { // main page for viewing urls
 app.get("/urls/new", (req, res) => { // page for making new urls
   // redirect to login page if not logged in
   if (!users[req.session.userCookie]) {
-    res.redirect("/login");
+    return res.redirect("/login");
   }
   
   const templateVars = {
@@ -199,7 +186,7 @@ app.post("/urls/:id", (req, res) => { // edit short urls
   if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to edit this url.");
   }
-  
+
   urlDatabase[req.params.id].longUrl = req.body.update;
 });
 
