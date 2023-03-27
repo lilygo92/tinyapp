@@ -189,6 +189,7 @@ app.post("/urls/:id", (req, res) => { // edit short urls
   }
 
   urlDatabase[req.params.id].longUrl = req.body.update;
+  res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => { // delete short urls
