@@ -15,6 +15,7 @@ app.use(cookieSession({
 app.use(express.urlencoded({ extended: true }));
 
 
+// redirect to home page, or login page if not logged in
 app.get("/", (req, res) => {
   if (!users[req.session.userCookie]) {
     return res.redirect("/login");
@@ -24,6 +25,8 @@ app.get("/", (req, res) => {
 });
 
 
+// display login page
+// redirect to home page if already logged in
 app.get("/login", (req, res) => {
   if (users[req.session.userCookie]) {
     return res.redirect("/urls");
@@ -33,22 +36,21 @@ app.get("/login", (req, res) => {
 });
 
 
+// log users in
+// check that forms are all filled out, that the account is already registered, and that the password is correct
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  // check that both email and password forms were filled in
   if (!email || !password) {
     return res.status(400).send("Please fill out all the forms.");
   }
 
-  // check that submitted email exists in users database
   const userFound = getUserByEmail(email, users);
   if (!userFound) {
     return res.status(403).send("That email isn't registered");
   }
 
-  // check that submitted password is correct
   if (!bcrypt.compareSync(password, userFound.hashedPassword)) {
     return res.status(403).send("Your email and password do not match");
   }
@@ -58,6 +60,7 @@ app.post("/login", (req, res) => {
 });
 
 
+// log out user
 // clear all cookies and redirect to log in
 app.post("/logout", (req, res) => {
   req.session = null;
@@ -65,6 +68,8 @@ app.post("/logout", (req, res) => {
 });
 
 
+// display register page
+// redirect to home page if already logged in
 app.get("/register", (req, res) => {
   if (users[req.session.userCookie]) {
     return res.redirect("/urls");
@@ -74,18 +79,18 @@ app.get("/register", (req, res) => {
 });
 
 
+// register users
+// check that forms are all filled in and that account does not already exist
 app.post("/register", (req, res) => {
   const userCookie = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  // check that both email and password forms were filled in
   if (!email || !password) {
     return res.status(400).send("Please fill out all the forms.");
   }
-  
-  // check that email is not already registered
+
   const userFound = getUserByEmail(email, users);
   if (userFound) {
     return res.status(400).send("That email is already registered!");
@@ -93,7 +98,6 @@ app.post("/register", (req, res) => {
 
   req.session.userCookie = (userCookie);
 
-  // add user info to users database
   users[req.session.userCookie] = {
     id: userCookie,
     email,
@@ -104,8 +108,10 @@ app.post("/register", (req, res) => {
 });
 
 
-app.get("/urls", (req, res) => { // main page for viewing urls
-  // redirect to login page if not logged in
+// display the main page that contains urls
+// redirect to login page if user is not logged in
+app.get("/urls", (req, res) => {
+
   if (!users[req.session.userCookie]) {
     return res.redirect("/login");
   }
@@ -119,8 +125,9 @@ app.get("/urls", (req, res) => { // main page for viewing urls
 });
 
 
-app.get("/urls/new", (req, res) => { // page for making new urls
-  // redirect to login page if not logged in
+// display page for creating new urls
+// redirects to login page if user is not logged in
+app.get("/urls/new", (req, res) => {
   if (!users[req.session.userCookie]) {
     return res.redirect("/login");
   }
@@ -133,11 +140,12 @@ app.get("/urls/new", (req, res) => { // page for making new urls
 });
 
 
-app.post("/urls", (req, res) => { // add new short urls
+// adds new short urls into the database with their corresponding long url and the user id of whoever created the url
+app.post("/urls", (req, res) => {
   const id = generateRandomString();
 
   urlDatabase[id] = {
-    userId: req.session.userCookie, // attaches url to the id of its creator
+    userId: req.session.userCookie,
     longUrl: req.body.longURL
   };
 
@@ -145,13 +153,13 @@ app.post("/urls", (req, res) => { // add new short urls
 });
 
 
-app.get("/urls/:id", (req, res) => { // page for editing short urls
-  // check that user is logged in
+// display page for editing urls
+// check that user is logged in and is the owner of the url
+app.get("/urls/:id", (req, res) => {
   if (!users[req.session.userCookie]) {
     return res.status(400).send("Please log in to view urls.");
   }
 
-  // check that the url was made by the user trying to access it
   if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to view this url.");
   }
@@ -162,32 +170,21 @@ app.get("/urls/:id", (req, res) => { // page for editing short urls
     longURL: urlDatabase[req.params.id].longUrl
   };
 
-
   res.render("urls_show", templateVars);
 });
 
 
-app.get("/u/:id", (req, res) => { // redirect to long urls
+// edit which long url the short url redirects to
+// check that user is logged in and is the owner of the url
+app.post("/urls/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.status(400).send("That url does not exist!");
   }
 
-  const longURL = urlDatabase[req.params.id].longUrl;
-  res.redirect(longURL);
-});
-
-
-app.post("/urls/:id", (req, res) => { // edit short urls
-  if (!urlDatabase[req.params.id]) {
-    return res.status(400).send("That url does not exist!");
-  }
-
-  // check that user is logged in
   if (!users[req.session.userCookie]) {
     return res.status(400).send("Please log in to edit urls.");
   }
 
-  // check that the url was made by the user trying to edit it
   if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to edit this url.");
   }
@@ -196,17 +193,18 @@ app.post("/urls/:id", (req, res) => { // edit short urls
   res.redirect("/urls");
 });
 
-app.post("/urls/:id/delete", (req, res) => { // delete short urls
+
+// delete short urls from home page
+// check that user is logged in and is the owner of the url
+app.post("/urls/:id/delete", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.status(400).send("That url does not exist!");
   }
   
-  // check that user is logged in
   if (!users[req.session.userCookie]) {
     return res.status(400).send("Please log in to delete urls.");
   }
 
-  // check that the url was made by the user trying to delete it
   if (users[req.session.userCookie].id !== urlDatabase[req.params.id].userId) {
     return res.status(400).send("You do not have permission to delete this url.");
   }
@@ -214,5 +212,17 @@ app.post("/urls/:id/delete", (req, res) => { // delete short urls
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
+
+
+// redirects to corresponding long url
+app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.status(400).send("That url does not exist!");
+  }
+
+  const longURL = urlDatabase[req.params.id].longUrl;
+  res.redirect(longURL);
+});
+
 
 app.listen(PORT);

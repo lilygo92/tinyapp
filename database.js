@@ -1,4 +1,4 @@
 const urlDatabase = {};
-const users = {}; 
+const users = {};
 
 module.exports = { urlDatabase, users };
